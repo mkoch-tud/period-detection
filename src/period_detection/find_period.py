@@ -8,7 +8,7 @@ from collections import namedtuple
 
 
 def find_period(path, 
-path_is_df = False
+path_is_df = False,
 tol_norm_diff=10**(-3), 
 number_steps=1000,
 minimum_number_of_relevant_shifts=2,
