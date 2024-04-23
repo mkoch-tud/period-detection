@@ -9,6 +9,7 @@ from collections import namedtuple
 
 def find_period(path, 
 path_is_df = False,
+noprint = False,
 tol_norm_diff=10**(-3), 
 number_steps=1000,
 minimum_number_of_relevant_shifts=2,
@@ -23,6 +24,7 @@ reference_time = pd.Timestamp('2017-01-01T12'),):
     This is the main period detection function. 
     It reads your timeseries from a file or pandas dataframe given as path and calculates the difference between the original autocorrelation function and several possible shifts in order to find minima which indicate possible periods.
     If path argument is a pandas dataframe, set path_is_df to True.
+    The noprint option (default: False), if set to True, runs the program without any output if output_flag is also set to 0.
     Then a model is fitted for every suggested period. Afterwards each models performance is evaluated by taking the original time series and subtracting the model. 
     If the model fits the time series well, the leftover should be noise and the autocorrelation function should deteriorate.
     It requires the data path, 
@@ -40,6 +42,7 @@ reference_time = pd.Timestamp('2017-01-01T12'),):
 
     :param path: string
     :param path_is_df: bool
+    :param noprint: bool
     :param reference_time: pd.Timestamp
     :param tol_norm_diff: positive float
     :param number_steps: positive integer
@@ -70,18 +73,21 @@ reference_time = pd.Timestamp('2017-01-01T12'),):
     max_dist = max(pw_dist)
     if  max_dist == min_dist:
         lag_len = pw_dist[0].total_seconds()/60
-        print("Time-equidistant datapoints with a lag size of "+str(lag_len)+" minutes.")
+        if not noprint:
+            print("Time-equidistant datapoints with a lag size of "+str(lag_len)+" minutes.")
     else:
-        print("The datapoints are not time-equidistant!")
+        if not noprint:
+            print("The datapoints are not time-equidistant!")
 
     
     if min_dist.total_seconds() <= 0:
-        print("Warning: At least two records with the same timestamp!")
+        if not noprint:
+            print("Warning: At least two records with the same timestamp!")
 
     try:
         # Calculate the difference between the unshifted and shifted autocorrelation function for each shift and determine which ones are relevant based on their local minima (Step 3 & 4 in Algorithm 1 in the paper)
         diffs = [shift_diff(i, corfunc) for i in list(range(0,int(np.array(corfunc).size-np.array(corfunc).size*minimum_ratio_of_datapoints_for_shift_autocorrelation)))]
-        relevant_diffs, peaks, stop_calculation = get_relevant_diffs(diffs)
+        relevant_diffs, peaks, stop_calculation = get_relevant_diffs(diffs,noprint)
 
         list_relv_pos=[]
         size_list_relv_pos=len(list_relv_pos)
@@ -150,7 +156,8 @@ reference_time = pd.Timestamp('2017-01-01T12'),):
                         norm_diff_between_singal_and_model = sum(abs(signal_subtracted_model))[0] / signal_subtracted_model.size
                         list_norm_diff_data_model.append(norm_diff_between_singal_and_model)
                     else:
-                        print('Relevant lag in autocorrelation function with non-positive correlation!')
+                        if not noprint:
+                            print('Relevant lag in autocorrelation function with non-positive correlation!')
                         break
             
 
@@ -169,12 +176,15 @@ reference_time = pd.Timestamp('2017-01-01T12'),):
                     model_data=model_data_very_close_fit[0]
                     best_tolerance = best_tolerances_close_fit[0]
                     other_tolerances = df_periods_criterion['tolerances'][df_periods_criterion['tolerances'] != best_tolerance].to_list()
-                    print('Very small difference between data and model, difference smaller than ' + str(tol_norm_diff))
+                    if not noprint:
+                        print('Very small difference between data and model, difference smaller than ' + str(tol_norm_diff))
 
                     if lag_len:
-                        print('The suggested period in minutes is ' + str(res_period) + ', in hours is ' + str(res_period / 60) + ', in days is ' + str(res_period / 60 / 24) + ' and in lags is ' + str(res_period/lag_len))
+                        if not noprint:
+                            print('The suggested period in minutes is ' + str(res_period) + ', in hours is ' + str(res_period / 60) + ', in days is ' + str(res_period / 60 / 24) + ' and in lags is ' + str(res_period/lag_len))
                     else:
-                        print('The suggested period in minutes is ' + str(res_period) + ', in hours is ' + str(res_period / 60) + ' and in days is ' + str(res_period / 60 / 24))
+                        if not noprint:
+                            print('The suggested period in minutes is ' + str(res_period) + ', in hours is ' + str(res_period / 60) + ' and in days is ' + str(res_period / 60 / 24))
                 else:
                     # If the fit is not close but there are suggested periods, then find the period with the best criterion of correlation reduction (Step 6 in Algorithm 1 in the paper)
                     index_min_criterion=df_periods_criterion['criterion'].idxmax()
@@ -184,17 +194,21 @@ reference_time = pd.Timestamp('2017-01-01T12'),):
                     model_data = df_periods_criterion['model_data'][index_min_criterion]
                     best_tolerance=df_periods_criterion['tolerances'][index_min_criterion]
                     other_tolerances=df_periods_criterion['tolerances'][df_periods_criterion.index != index_min_criterion].to_list()
-                    print('Reduction of correlation by model: ' + str(res_criteria) + ' with sigma ' + str(best_tolerance))
+                    if not noprint:
+                        print('Reduction of correlation by model: ' + str(res_criteria) + ' with sigma ' + str(best_tolerance))
                     if lag_len:
-                        print('The suggested period in minutes is ' + str(res_period) + ', in hours is ' + str(res_period / 60) + ', in days is ' + str(res_period / 60 / 24) + ' and in lags is ' + str(res_period/lag_len))
+                        if not noprint:
+                            print('The suggested period in minutes is ' + str(res_period) + ', in hours is ' + str(res_period / 60) + ', in days is ' + str(res_period / 60 / 24) + ' and in lags is ' + str(res_period/lag_len))
                     else:
-                        print('The suggested period in minutes is ' + str(res_period) + ', in hours is ' + str(res_period / 60) + ' and in days is ' + str(res_period / 60 / 24))
+                        if not noprint:
+                            print('The suggested period in minutes is ' + str(res_period) + ', in hours is ' + str(res_period / 60) + ' and in days is ' + str(res_period / 60 / 24))
 
                 if output_flag==1:
                     plot_with_period(df_data, diffs, other_tolerances, best_tolerance, lag_list, r_list, p_list, corfunc, model_data, norm_diff_between_singal_and_model,  plot_tolerances,level_of_significance_for_pearson,consider_only_significant_correlation, minimum_number_of_datapoints_for_correlation_test)
             # If no, plot without period
             else:
-                print('List of suggested periods is empty!')
+                if not noprint:
+                    print('List of suggested periods is empty!')
                 res_period = -1
                 res_criteria = 0
                 if output_flag == 1:

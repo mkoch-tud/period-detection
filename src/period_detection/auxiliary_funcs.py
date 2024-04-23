@@ -80,7 +80,7 @@ def fit_model(df_data_aggregated):
 
     return y_model, mlp
 
-def get_relevant_diffs(diffs):
+def get_relevant_diffs(diffs,noprint=False):
     '''
     This function detects the local minima in the differences diffs between the original autocorrelation function and its shifted versions.
     It returns a list of the peaks, their indices and a Boolean indicating whether further calculation can be aboarted do to a lack of local minima.
@@ -90,7 +90,8 @@ def get_relevant_diffs(diffs):
     stop_calculation=0
     peaks, _ = find_peaks(-np.array(diffs))
     if peaks.size <= 0:
-        print('No local minima in the inner domain of the function mapping the L^1 norm of the difference between the autocorrelation function and its shifted versions against the shifts! No period detection possible!')
+        if not noprint:
+            print('No local minima in the inner domain of the function mapping the L^1 norm of the difference between the autocorrelation function and its shifted versions against the shifts! No period detection possible!')
         stop_calculation = 1
     # For shift=0, two identical functions are subtracted resulting in a local minimum at shift 0 in the function mapping the L^1 norm of the difference between the autocorrelation function and its shifted versions against the shifts.
     # Needs to be inserted separately since find_peaks searches only in the inne of the domain, consequently no boundary values are considered
