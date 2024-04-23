@@ -8,6 +8,7 @@ from collections import namedtuple
 
 
 def find_period(path, 
+path_is_df = False
 tol_norm_diff=10**(-3), 
 number_steps=1000,
 minimum_number_of_relevant_shifts=2,
@@ -20,7 +21,8 @@ plot_tolerances=1,
 reference_time = pd.Timestamp('2017-01-01T12'),):
     '''
     This is the main period detection function. 
-    It reads your timeseries from a file given as path and calculates the difference between the original autocorrelation function and several possible shifts in order to find minima which indicate possible periods.
+    It reads your timeseries from a file or pandas dataframe given as path and calculates the difference between the original autocorrelation function and several possible shifts in order to find minima which indicate possible periods.
+    If path argument is a pandas dataframe, set path_is_df to True.
     Then a model is fitted for every suggested period. Afterwards each models performance is evaluated by taking the original time series and subtracting the model. 
     If the model fits the time series well, the leftover should be noise and the autocorrelation function should deteriorate.
     It requires the data path, 
@@ -37,6 +39,7 @@ reference_time = pd.Timestamp('2017-01-01T12'),):
     The returns are the resulting period res_period, the fitted model res_model if a period was found and a performance criterion res_criteria
 
     :param path: string
+    :param path_is_df: bool
     :param reference_time: pd.Timestamp
     :param tol_norm_diff: positive float
     :param number_steps: positive integer
@@ -50,7 +53,10 @@ reference_time = pd.Timestamp('2017-01-01T12'),):
     '''
 
     # Load data
-    df_data = pd.read_csv(path, parse_dates=["date"])
+    if path_is_df:
+        df_data = path
+    else:
+        df_data = pd.read_csv(path, parse_dates=["date"])
     
     Results = namedtuple('Results', 'period model criteria')
             
